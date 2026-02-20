@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика{% endblock %}
+
+{% block content %}
+<h1>Статистика здоровья</h1>
+<div id="stats-content">Загрузка...</div>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = getToken();
+        if (!token) {
+            window.location.href = '/';
+            return;
+        }
+        try {
+            const response = await fetch('/api/v1/stats/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const html = await response.text();
+            document.getElementById('stats-content').innerHTML = html;
+        } catch (err) {
+            document.getElementById('stats-content').innerHTML = 'Ошибка загрузки статистики.';
+        }
+    });
+</script>
+<p><a href="/">На главную</a></p>
+{% endblock %}
