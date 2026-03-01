@@ -1,0 +1,2 @@
+fastapi, uvicorn, sqlalchemy, alembic, psycopg2-binary, python-jose, passlib, python-multipart, pydantic-settings, httpx plotly, pandas, jinja2, loguru, python-dotenv
+

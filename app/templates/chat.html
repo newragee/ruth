@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Чат{% endblock %}
+
+{% block content %}
+<h1>Диалог с нейросетью</h1>
+<form id="chat-form">
+    <textarea id="message" placeholder="Введите сообщение..." rows="4" required></textarea>
+    <button type="submit">Отправить</button>
+</form>
+<div id="response" style="margin-top: 20px;"></div>
+<p><a href="/">На главную</a></p>
+{% endblock %}
