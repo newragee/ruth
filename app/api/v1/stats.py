@@ -17,21 +17,21 @@ async def get_stats_page(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Логируем просмотр статистики
+    
     LogService(db).log_action(current_user.id, "view_stats")
 
     stats_service = HealthStatsService(db)
     viz_service = VisualizationService()
     report_service = ReportingService()
 
-    # Получаем все метрики за последние 30 дней
+    # все метрики за последние 30 дней
     metrics = stats_service.get_metrics(current_user.id, days=30)
-
-    # Генерируем графики для каждого типа метрик (упрощённо – один общий)
+    #ЭТО ПОКА ЧТО НЕ РАБОТАЕТ
+    # графики для каждого типа метрик (упрощённо – один общий)
     chart_html = await viz_service.generate_chart(current_user.id, db)
     recommendation = report_service.generate_recommendation(current_user.id, db)
 
-    # Возвращаем HTML (можно использовать шаблон, но здесь для простоты вернём строку)
+
     html_content = f"""
     <html>
         <head><title>Статистика здоровья</title></head>

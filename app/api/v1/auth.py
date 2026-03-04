@@ -14,11 +14,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 @router.post("/register", response_model=Token)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    # Проверка существования пользователя
+    # Проверка 
     db_user = db.query(User).filter(User.username == user_data.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
-    # Создание нового пользователя
+    # Создание 
     hashed = get_password_hash(user_data.password)
     new_user = User(username=user_data.username, hashed_password=hashed)
     db.add(new_user)
