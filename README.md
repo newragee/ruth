@@ -9,7 +9,7 @@
 Прими все так...         
 &nbsp;&nbsp;&nbsp;&nbsp;как есть
         \
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Сию дверь отворив,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;сию дверь отворив,
             
 Ведь страшен не вайбкод\
 А страшно то мученье,\
