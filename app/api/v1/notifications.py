@@ -1,3 +1,5 @@
+#ТУТ НИЧИВО НЕ РАБОТАЕТ БЕБЕБЕ
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.api.v1.auth import get_current_user
@@ -13,7 +15,7 @@ def get_notifications(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Простейшие уведомления: например, если пользователь давно не заходил
-    # Для демо вернём заглушку
+    # Простейшие уведомления 
+    # Для демо заглушка
     LogService(db).log_action(current_user.id, "view_notifications")
     return {"notifications": ["У вас нет новых уведомлений"]}

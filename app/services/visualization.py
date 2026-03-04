@@ -6,19 +6,20 @@ from app.services.health_stats import HealthStatsService
 class VisualizationService:
     async def generate_chart(self, user_id: int, db: Session, metric_type: str = None) -> str:
         """
-        Генерирует HTML-код графика Plotly для показателей здоровья.
-        Возвращает строку с HTML.
+        Должен возвращать Plotly для показателей здоровья.
+        Нихуя по итогу не возвращает
+        потом разберусь, скорее всего ошибка фронтенда ебаного жс для долбоебов 
         """
         stats = HealthStatsService(db)
         metrics = stats.get_metrics(user_id, metric_type, days=30)
         if not metrics:
             return "<p>Нет данных для отображения графика.</p>"
 
-        # Преобразуем в DataFrame
+        
         data = []
         for m in metrics:
             row = {"timestamp": m.timestamp, "metric_type": m.metric_type}
-            # Для давления извлекаем систолическое и диастолическое
+            
             if m.metric_type == "blood_pressure":
                 row["systolic"] = m.value_json.get("systolic")
                 row["diastolic"] = m.value_json.get("diastolic")
@@ -47,4 +48,5 @@ class VisualizationService:
                               xaxis_title="Дата", yaxis_title="Значение")
 
         # Возвращаем HTML-код графика
+        # На самом деле нихуя мы тут не возвращаем у нас руки кривые 
         return fig.to_html(include_plotlyjs="cdn", div_id="chart")

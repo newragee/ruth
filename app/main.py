@@ -5,7 +5,7 @@ from app.api.v1 import auth, chat, stats, notifications
 from app.core.database import engine
 from app.models import Base
 
-# Создание таблиц (для простоты, в реальности использовать Alembic)
+# потом перееду на алембик 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Health Chat")
@@ -20,7 +20,7 @@ app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
 app.include_router(stats.router, prefix="/api/v1/stats", tags=["stats"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
 
-# Простой корневой эндпоинт для отдачи HTML
+#тупые эндпоинты потом поправлю
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 

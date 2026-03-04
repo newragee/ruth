@@ -25,10 +25,10 @@ class LLMClient:
                 response.raise_for_status()
                 data = response.json()
 
-                # Сначала пробуем поле response
+                
                 answer = data.get("response", "").strip()
                 if not answer:
-                    # Если response пуст, пробуем поле thinking (некоторые модели)
+                    # Если pole response пустое - какая то хуйня \\потом убрать 
                     answer = data.get("thinking", "").strip()
                     if answer:
                         logger.info("Ответ получен из поля thinking")
