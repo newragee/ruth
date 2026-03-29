@@ -4,7 +4,6 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
 engine = create_engine(settings.DATABASE_URL)
-# тут хз по аргумментам, пока так 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

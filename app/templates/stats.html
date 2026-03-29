@@ -1,27 +1,151 @@
 {% extends "base.html" %}
 
-{% block title %}Статистика{% endblock %}
+{% block title %}Статистика здоровья{% endblock %}
 
 {% block content %}
-<h1>Статистика здоровья</h1>
-<div id="stats-content">Загрузка...</div>
+<div class="stats-page">
+    <div class="page-header">
+        <h1>Статистика здоровья</h1>
+        <div class="stats-controls">
+            <label for="days-select">Период:</label>
+            <select id="days-select">
+                <option value="7">7 дней</option>
+                <option value="30" selected>30 дней</option>
+                <option value="90">90 дней</option>
+                <option value="365">Год</option>
+            </select>
+            <button id="refresh-btn" class="btn-secondary">Обновить</button>
+        </div>
+    </div>
+
+    <div id="recommendation-block" class="recommendation-block" style="display:none;"></div>
+
+    <div id="charts-container" class="charts-container"></div>
+
+    <h2>Таблица показателей</h2>
+    <div id="table-container" class="table-container">
+        <p class="loading-text">Загрузка данных...</p>
+    </div>
+
+    <p><a href="/" class="back-link">← На главную</a></p>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        const token = getToken();
-        if (!token) {
-            window.location.href = '/';
-            return;
+const METRIC_NAMES = {
+    blood_pressure: "Давление",
+    pulse: "Пульс",
+    weight: "Вес",
+    temperature: "Температура",
+    blood_sugar: "Сахар в крови"
+};
+
+async function loadStats() {
+    const token = getToken();
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    const days = document.getElementById('days-select').value;
+    const tableContainer = document.getElementById('table-container');
+    const chartsContainer = document.getElementById('charts-container');
+    const recBlock = document.getElementById('recommendation-block');
+
+    tableContainer.innerHTML = '<p class="loading-text">Загрузка данных...</p>';
+    chartsContainer.innerHTML = '';
+    recBlock.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/v1/stats/?days=' + days, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Ошибка ' + response.status);
         }
-        try {
-            const response = await fetch('/api/v1/stats/', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const html = await response.text();
-            document.getElementById('stats-content').innerHTML = html;
-        } catch (err) {
-            document.getElementById('stats-content').innerHTML = 'Ошибка загрузки статистики.';
+        const data = await response.json();
+
+        // Рекомендации
+        if (data.recommendation) {
+            recBlock.style.display = 'block';
+            recBlock.innerHTML = '<h3>Рекомендации</h3><pre>' + escapeHtml(data.recommendation) + '</pre>';
         }
-    });
+
+        // Графики через Plotly.newPlot
+        if (data.charts && Object.keys(data.charts).length > 0) {
+            for (const [metricType, plotlyJson] of Object.entries(data.charts)) {
+                const chartDiv = document.createElement('div');
+                chartDiv.className = 'chart-block';
+
+                const plotDiv = document.createElement('div');
+                plotDiv.id = 'chart-' + metricType;
+                plotDiv.style.width = '100%';
+                plotDiv.style.height = '350px';
+                chartDiv.appendChild(plotDiv);
+
+                chartsContainer.appendChild(chartDiv);
+
+                // Рендерим график через Plotly API
+                Plotly.newPlot(
+                    plotDiv,
+                    plotlyJson.data,
+                    plotlyJson.layout,
+                    { responsive: true, displayModeBar: false }
+                );
+            }
+        } else {
+            chartsContainer.innerHTML = '<p class="no-data">Нет данных для графиков за выбранный период.</p>';
+        }
+
+        // Таблица
+        if (data.table && data.table.length > 0) {
+            var html = '<table class="data-table"><thead><tr>' +
+                '<th>Дата и время</th><th>Показатель</th><th>Значение</th><th>Единица</th>' +
+                '</tr></thead><tbody>';
+            var sorted = data.table.slice().reverse();
+            for (var i = 0; i < sorted.length; i++) {
+                var row = sorted[i];
+                var dt = row.timestamp ? new Date(row.timestamp) : null;
+                var dateStr = dt ? dt.toLocaleString('ru-RU', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                }) : '—';
+                var typeName = METRIC_NAMES[row.metric_type] || row.metric_type;
+                html += '<tr>' +
+                    '<td>' + dateStr + '</td>' +
+                    '<td>' + escapeHtml(typeName) + '</td>' +
+                    '<td>' + escapeHtml(row.value) + '</td>' +
+                    '<td>' + escapeHtml(row.unit) + '</td>' +
+                    '</tr>';
+            }
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        } else {
+            tableContainer.innerHTML = '<p class="no-data">Нет данных за выбранный период. Отправьте показатели здоровья через чат.</p>';
+        }
+
+    } catch (err) {
+        console.error('Stats error:', err);
+        tableContainer.innerHTML = '<p class="error-text">Ошибка загрузки статистики: ' + escapeHtml(err.message) + '</p>';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    var d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    document.getElementById('refresh-btn').addEventListener('click', loadStats);
+    document.getElementById('days-select').addEventListener('change', loadStats);
+});
 </script>
-<p><a href="/">На главную</a></p>
 {% endblock %}

@@ -28,7 +28,7 @@ class LLMClient:
                 
                 answer = data.get("response", "").strip()
                 if not answer:
-                    # Если pole response пустое - какая то хуйня \\потом убрать 
+                    # Некоторые модели возвращают ответ в поле thinking
                     answer = data.get("thinking", "").strip()
                     if answer:
                         logger.info("Ответ получен из поля thinking")

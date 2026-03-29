@@ -17,29 +17,22 @@ class ChatProcessor:
         self.logger = LogService(db)
 
     async def process_message(self, message: str) -> tuple[str, list[str] | None]:
-      
         self.logger.log_action(self.user_id, "chat_message", f"Message: {message}")
 
-        # ФИКСИТЬ НАДО ОЧЕНЬ СИЛЬНО
         extracted = self._extract_health_metrics(message)
         saved_metrics = []
         if extracted:
             for metric in extracted:
-                saved = self.health_stats.add_metric(self.user_id, metric["type"], metric["value"])
+                self.health_stats.add_metric(self.user_id, metric["type"], metric["value"])
                 saved_metrics.append(metric["type"])
             self.logger.log_action(self.user_id, "metrics_saved", f"Saved: {saved_metrics}")
 
-        
-        if "статистика" in message.lower() or "график" in message.lower() or "покажи" in message.lower():
-            # Запрос статистики
-            # В реальности нужно анализировать период и тип показателя
-            chart_html = await self.visualization.generate_chart(self.user_id, self.db)
+        if "статистика" in message.lower() or "график" in message.lower():
             recommendation = self.reporting.generate_recommendation(self.user_id, self.db)
-            response = f"{recommendation}\n\n{chart_html}"
-            return response, saved_metrics
+            response = recommendation
+            return response, saved_metrics if saved_metrics else None
 
-        #  Иначе отправляем в LLM
-        # Можно добавить контекст (последние показатели) в промпт
+        # Отправляем в LLM с контекстом здоровья
         context = self._build_context()
         prompt = f"Контекст: {context}\n\nСообщение пользователя: {message}\n\nОтвет:"
         llm_response = await self.llm.generate_response(prompt)
@@ -50,36 +43,66 @@ class ChatProcessor:
         self.db.commit()
 
         return llm_response, saved_metrics if saved_metrics else None
-    # ФИКСИТЬ НАДО ТОЖЕ
+
     def _extract_health_metrics(self, text: str) -> list[dict]:
-       
         extracted = []
-        # Давление: "давление 120/80" или "120/80" ХУЙНЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯ
-        bp_pattern = r"(?:давление\s*)?(\d{2,3})\/(\d{2,3})"
-        bp_match = re.search(bp_pattern, text, re.IGNORECASE)
+        text_lower = text.lower()
+
+        # Давление: обязательно ключевое слово ИЛИ формат X/Y в контексте здоровья
+        bp_pattern = r"(?:давлени[ея]|ад)\s*[:=]?\s*(\d{2,3})\s*[/на]\s*(\d{2,3})"
+        bp_match = re.search(bp_pattern, text_lower)
         if bp_match:
-            extracted.append({
-                "type": "blood_pressure",
-                "value": {"systolic": int(bp_match.group(1)), "diastolic": int(bp_match.group(2))}
-            })
+            sys_val = int(bp_match.group(1))
+            dia_val = int(bp_match.group(2))
+            if 60 <= sys_val <= 250 and 30 <= dia_val <= 150:
+                extracted.append({
+                    "type": "blood_pressure",
+                    "value": {"systolic": sys_val, "diastolic": dia_val}
+                })
 
-        # Пульс: "пульс 75" или "75 ударов" ХУЙНЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯ
-        pulse_pattern = r"(?:пульс\s*)?(\d{2,3})(?:\s*уд/?мин)?"
-        pulse_match = re.search(pulse_pattern, text, re.IGNORECASE)
+        # Пульс: обязательно ключевое слово
+        pulse_pattern = r"(?:пульс|чсс|сердцебиени[ея])\s*[:=]?\s*(\d{2,3})(?:\s*уд(?:ар(?:ов|а)?)?(?:\s*в?\s*мин(?:уту)?)?)?"
+        pulse_match = re.search(pulse_pattern, text_lower)
         if pulse_match:
-            extracted.append({
-                "type": "pulse",
-                "value": {"value": int(pulse_match.group(1))}
-            })
+            val = int(pulse_match.group(1))
+            if 30 <= val <= 220:
+                extracted.append({
+                    "type": "pulse",
+                    "value": {"value": val}
+                })
 
-        # Вес: "вес 70" или "70 кг" ПООООООЛНАЯ ХУЙНЯЯЯЯЯЯЯЯЯЯЯЯЯ
-        weight_pattern = r"(?:вес\s*)?(\d{2,3})(?:\s*кг)?"
-        weight_match = re.search(weight_pattern, text, re.IGNORECASE)
+        # Вес: обязательно ключевое слово
+        weight_pattern = r"(?:вес|масс[аы](?:\s*тела)?)\s*[:=]?\s*(\d{2,3}(?:[.,]\d{1,2})?)(?:\s*кг)?"
+        weight_match = re.search(weight_pattern, text_lower)
         if weight_match:
-            extracted.append({
-                "type": "weight",
-                "value": {"value": int(weight_match.group(1))}
-            })
+            val = float(weight_match.group(1).replace(",", "."))
+            if 20 <= val <= 300:
+                extracted.append({
+                    "type": "weight",
+                    "value": {"value": val}
+                })
+
+        # Температура
+        temp_pattern = r"(?:температур[аы]|темп)\s*[:=]?\s*(\d{2}(?:[.,]\d{1,2})?)(?:\s*°?[cсCС]?)?"
+        temp_match = re.search(temp_pattern, text_lower)
+        if temp_match:
+            val = float(temp_match.group(1).replace(",", "."))
+            if 34.0 <= val <= 42.0:
+                extracted.append({
+                    "type": "temperature",
+                    "value": {"value": val}
+                })
+
+        # Сахар в крови
+        sugar_pattern = r"(?:сахар|глюкоз[аы]|гликеми[яю])\s*[:=]?\s*(\d{1,2}(?:[.,]\d{1,2})?)(?:\s*ммоль)?"
+        sugar_match = re.search(sugar_pattern, text_lower)
+        if sugar_match:
+            val = float(sugar_match.group(1).replace(",", "."))
+            if 1.0 <= val <= 30.0:
+                extracted.append({
+                    "type": "blood_sugar",
+                    "value": {"value": val}
+                })
 
         return extracted
 
@@ -89,5 +112,5 @@ class ChatProcessor:
             return "Нет данных о здоровье."
         lines = ["Последние показатели:"]
         for m in recent:
-            lines.append(f"{m.metric_type}: {m.value_json} (в {m.timestamp.strftime('%d.%m %H:%M')})")
+            lines.append(f"{m.metric_type}: {m.value_json} ({m.timestamp.strftime('%d.%m %H:%M')})")
         return "\n".join(lines)
