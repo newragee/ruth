@@ -1,5 +1,3 @@
-#ТУТ НИЧИВО НЕ РАБОТАЕТ БЕБЕБЕ
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.api.v1.auth import get_current_user

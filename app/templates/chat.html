@@ -3,11 +3,101 @@
 {% block title %}Чат{% endblock %}
 
 {% block content %}
-<h1>Диалог с нейросетью</h1>
-<form id="chat-form">
-    <textarea id="message" placeholder="Введите сообщение..." rows="4" required></textarea>
-    <button type="submit">Отправить</button>
-</form>
-<div id="response" style="margin-top: 20px;"></div>
-<p><a href="/">На главную</a></p>
+<div class="chat-page">
+    <h1>Диалог с нейросетью</h1>
+    <p class="hint-text">Вы можете отправлять показатели здоровья прямо в чат, например:<br>
+        <em>«давление 120/80»</em>, <em>«пульс 72»</em>, <em>«вес 68»</em>, <em>«температура 36.6»</em>, <em>«сахар 5.4»</em>
+    </p>
+
+    <div id="chat-history" class="chat-history"></div>
+
+    <form id="chat-form" class="chat-form">
+        <textarea id="message" placeholder="Введите сообщение..." rows="3" required></textarea>
+        <button type="submit" id="send-btn">Отправить</button>
+    </form>
+
+    <p><a href="/" class="back-link">← На главную</a></p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const chatForm = document.getElementById('chat-form');
+    const chatHistory = document.getElementById('chat-history');
+    const messageInput = document.getElementById('message');
+    const sendBtn = document.getElementById('send-btn');
+
+    function addMessage(role, text, metrics) {
+        const div = document.createElement('div');
+        div.className = 'chat-message chat-' + role;
+
+        const label = document.createElement('span');
+        label.className = 'chat-label';
+        label.textContent = role === 'user' ? 'Вы' : 'Ассистент';
+        div.appendChild(label);
+
+        const body = document.createElement('div');
+        body.className = 'chat-body';
+        body.textContent = text;
+        div.appendChild(body);
+
+        if (metrics && metrics.length > 0) {
+            const METRIC_NAMES = {
+                blood_pressure: 'давление',
+                pulse: 'пульс',
+                weight: 'вес',
+                temperature: 'температура',
+                blood_sugar: 'сахар'
+            };
+            const badge = document.createElement('div');
+            badge.className = 'metrics-badge';
+            badge.textContent = 'Сохранено: ' + metrics.map(m => METRIC_NAMES[m] || m).join(', ');
+            div.appendChild(badge);
+        }
+
+        chatHistory.appendChild(div);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    if (chatForm) {
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            const token = getToken();
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            addMessage('user', message);
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Отправка...';
+
+            try {
+                const data = await apiCall('/api/v1/chat/', 'POST', { message }, token);
+                addMessage('assistant', data.response, data.extracted_metrics);
+            } catch (err) {
+                if (err.message && err.message.includes('401')) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                    return;
+                }
+                addMessage('assistant', 'Ошибка: ' + (err.message || String(err)));
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Отправить';
+            }
+        });
+    }
+
+    // Отправка по Ctrl+Enter
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+});
+</script>
 {% endblock %}
