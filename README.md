@@ -1,2 +1,19 @@
-fastapi, uvicorn, sqlalchemy, alembic, psycopg2-binary, python-jose, passlib, python-multipart, pydantic-settings, httpx plotly, pandas, jinja2, loguru, python-dotenv
+Оставь надежду, всяк сюда входящий\
+Тут только грех и код, написанный не мной\
+Исправит лишь техлид, своей рукой творящий\
+Но здесь техлид - есть я, назначенный судьбой
 
+
+Так что не жди здесь свет,\
+Не жди здесь огорчений,\
+Прими все так...         
+&nbsp;&nbsp;&nbsp;&nbsp;как есть
+        \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;сию дверь отворив,
+            
+Ведь страшен не вайбкод\
+А страшно то мученье,\
+&nbsp;&nbsp;&nbsp;&nbsp;которое
+        \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;предстоит пройти   
+Нам грех свой искупив 
