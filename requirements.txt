@@ -15,3 +15,12 @@ jinja2
 loguru
 pydantic-settings
 python-dotenv
+
+# Speech / NLP stack
+faster-whisper>=1.0.3        # STT (CTranslate2-backed Whisper)
+piper-tts>=1.2.0             # TTS (neural, streaming)
+soundfile>=0.12.1            # WAV I/O
+transformers>=4.41.0         # NLI / sentiment models (HF)
+torch>=2.2.0                 # backbone for transformers
+sentencepiece>=0.2.0         # tokenizer for ruBERT
+ffmpeg-python>=0.2.0         # audio resample/convert
