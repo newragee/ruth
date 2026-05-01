@@ -7,6 +7,25 @@ class LLMClient:
         self.base_url = host.rstrip('/')
         logger.info(f"Клиент Ollama для модели {model_name}")
 
+    async def generate_json(self, prompt: str, system: str = "") -> str:
+        """Запрос с принудительным JSON-выводом (Ollama format=json)."""
+        payload = {
+            "model": self.model_name,
+            "prompt": prompt,
+            "system": system,
+            "format": "json",
+            "stream": False,
+            "options": {"temperature": 0.0, "num_predict": 256},
+        }
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                resp = await client.post(f"{self.base_url}/api/generate", json=payload)
+                resp.raise_for_status()
+                return (resp.json().get("response") or "").strip()
+        except Exception as e:
+            logger.error(f"LLM JSON-запрос упал: {e}")
+            return ""
+
     async def generate_response(self, prompt: str, context: str = "") -> str:
         full_prompt = f"{context}\n\n{prompt}" if context else prompt
         payload = {

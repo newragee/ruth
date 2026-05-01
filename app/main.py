@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.api.v1 import auth, chat, stats, notifications
+from app.api.v1 import auth, chat, stats, notifications, voice
 from app.core.database import engine
 from app.models import Base
 
@@ -19,6 +19,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
 app.include_router(stats.router, prefix="/api/v1/stats", tags=["stats"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(voice.router, prefix="/api/v1/voice", tags=["voice"])
 
 from fastapi import Request
 from fastapi.responses import HTMLResponse
