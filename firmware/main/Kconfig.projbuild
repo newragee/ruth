@@ -1,0 +1,49 @@
+menu "Ruth Speaker Configuration"
+
+    menu "WiFi"
+        config WIFI_SSID
+            string "WiFi SSID"
+            default "myssid"
+        config WIFI_PASSWORD
+            string "WiFi password"
+            default "mypassword"
+    endmenu
+
+    menu "Backend"
+        config RUTH_SERVER_URL
+            string "Voice converse_raw endpoint"
+            default "http://192.168.1.10:8000/api/v1/voice/converse_raw"
+            help
+                Полный URL до POST /api/v1/voice/converse_raw на сервере.
+                Для HTTPS используй https://... и поправь TLS-настройки.
+
+        config RUTH_JWT
+            string "JWT bearer token"
+            default "PASTE_JWT_HERE"
+            help
+                Получаем через POST /api/v1/auth/login.
+                Срок жизни — 30 минут (см. ACCESS_TOKEN_EXPIRE_MINUTES в .env).
+                Для production надо хранить в NVS и обновлять при 401.
+    endmenu
+
+    menu "Activation mode"
+        choice RUTH_ACTIVATION
+            prompt "Как пользователь активирует разговор"
+            default RUTH_ACTIVATION_WAKEWORD
+            help
+                WAKEWORD — esp-sr WakeNet, голосовая активация.
+                BUTTON   — BOOT-кнопка (GPIO0), удобно для отладки.
+
+            config RUTH_ACTIVATION_WAKEWORD
+                bool "Wake word (esp-sr WakeNet)"
+            config RUTH_ACTIVATION_BUTTON
+                bool "Push-to-talk (BOOT button)"
+        endchoice
+
+        config RUTH_RECORD_MAX_SECONDS
+            int "Максимальная длительность реплики, сек"
+            default 8
+            range 2 30
+    endmenu
+
+endmenu
